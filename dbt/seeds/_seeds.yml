@@ -1,0 +1,8 @@
+version: 2
+
+seeds:
+  - name: symbols
+    description: Tradable symbols. Keep in sync with DERIV_SYMBOLS.
+    columns:
+      - name: symbol
+        data_tests: [unique, not_null]

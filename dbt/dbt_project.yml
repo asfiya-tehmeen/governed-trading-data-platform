@@ -1,0 +1,35 @@
+name: governed_trading
+version: "0.1.0"
+config-version: 2
+profile: governed_trading
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+target-path: target
+clean-targets: [target, dbt_packages]
+
+models:
+  governed_trading:
+    staging:
+      +schema: staging
+      +materialized: view
+    intermediate:
+      +schema: intermediate
+      +materialized: view
+    marts:
+      +schema: marts
+      +materialized: table
+      +contract:
+        enforced: true
+    pii:
+      +schema: pii
+      +materialized: view
+
+seeds:
+  governed_trading:
+    +schema: reference
+    symbols:
+      +column_types:
+        contract_size: numeric

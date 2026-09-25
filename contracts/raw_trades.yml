@@ -1,0 +1,59 @@
+name: raw_trades
+table: trades
+version: 1
+owner: trading
+description: >
+  Client trade executions (simulated), priced off the latest live Deriv tick.
+  Delivery is at-least-once, so duplicates on trade_id are possible here and
+  are removed in staging.
+primary_key: [trade_id]
+freshness:
+  timestamp_column: ingested_at
+  warn_after_minutes: 10
+  error_after_minutes: 30
+volume:
+  grain: hour
+  lookback_hours: 168
+  z_threshold: 3.0
+columns:
+  - name: trade_id
+    type: STRING
+    required: true
+  - name: client_id
+    type: STRING
+    required: true
+  - name: symbol
+    type: STRING
+    required: true
+  - name: side
+    type: STRING
+    required: true
+    allowed_values: [BUY, SELL]
+  - name: quantity
+    type: NUMERIC
+    required: true
+    minimum: 0
+    exclusive_minimum: true
+  - name: price
+    type: NUMERIC
+    required: true
+    minimum: 0
+    exclusive_minimum: true
+  - name: commission
+    type: NUMERIC
+    required: true
+    minimum: 0
+  - name: executed_at
+    type: TIMESTAMP
+    required: true
+  - name: tick_id
+    type: STRING
+    required: false
+    description: The tick the trade was priced from.
+  - name: source
+    type: STRING
+    required: true
+    allowed_values: [simulator]
+  - name: ingested_at
+    type: TIMESTAMP
+    required: true

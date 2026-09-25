@@ -1,0 +1,60 @@
+# Local stack: Pub/Sub emulator, the Deriv streamer, the loader and Airflow.
+# BigQuery has no emulator, so the loader and Airflow need real GCP credentials:
+# run `gcloud auth application-default login` first and set GCP_PROJECT in .env.
+
+x-gcp: &gcp
+  env_file: .env
+  volumes:
+    - ${APPDATA:-~/.config}/gcloud:/home/gcloud:ro
+  environment: &gcp-env
+    GOOGLE_APPLICATION_CREDENTIALS: /home/gcloud/application_default_credentials.json
+
+services:
+  pubsub:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
+    ports: ["8085:8085"]
+
+  bootstrap-pubsub:
+    build: .
+    command: ["bootstrap", "pubsub"]
+    env_file: .env
+    environment:
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+    depends_on: [pubsub]
+
+  streamer:
+    build: .
+    command: ["stream"]
+    env_file: .env
+    environment:
+      GTDP_SINK: pubsub
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+    depends_on:
+      bootstrap-pubsub: {condition: service_completed_successfully}
+    restart: unless-stopped
+
+  loader:
+    <<: *gcp
+    build: .
+    command: ["load"]
+    environment:
+      <<: *gcp-env
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+    depends_on:
+      bootstrap-pubsub: {condition: service_completed_successfully}
+    restart: unless-stopped
+
+  airflow:
+    <<: *gcp
+    build:
+      context: .
+      dockerfile: airflow/Dockerfile
+    command: standalone
+    ports: ["8080:8080"]
+    volumes:
+      - ${APPDATA:-~/.config}/gcloud:/home/gcloud:ro
+      - ./airflow/dags:/opt/airflow/dags
+    environment:
+      <<: *gcp-env
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"

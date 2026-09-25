@@ -1,0 +1,45 @@
+name: raw_clients
+table: clients
+version: 1
+owner: client-onboarding
+description: >
+  Client reference data. Each row is a full snapshot of a client at
+  updated_at; the latest row per client_id is current.
+primary_key: [client_id, updated_at]
+freshness:
+  timestamp_column: ingested_at
+  warn_after_minutes: 1440
+  error_after_minutes: 2880
+columns:
+  - name: client_id
+    type: STRING
+    required: true
+  - name: full_name
+    type: STRING
+    required: true
+    pii: true
+  - name: email
+    type: STRING
+    required: true
+    pii: true
+  - name: country
+    type: STRING
+    required: true
+    description: ISO 3166-1 alpha-2.
+  - name: account_currency
+    type: STRING
+    required: true
+    allowed_values: [USD, EUR, GBP]
+  - name: risk_tier
+    type: STRING
+    required: true
+    allowed_values: [LOW, MEDIUM, HIGH]
+  - name: opened_at
+    type: TIMESTAMP
+    required: true
+  - name: updated_at
+    type: TIMESTAMP
+    required: true
+  - name: ingested_at
+    type: TIMESTAMP
+    required: true

@@ -1,0 +1,51 @@
+name: raw_ticks
+table: ticks
+version: 1
+owner: market-data
+description: >
+  Live price ticks from the Deriv WebSocket API, one row per tick per symbol.
+primary_key: [tick_id]
+freshness:
+  timestamp_column: ingested_at
+  warn_after_minutes: 5
+  error_after_minutes: 15
+columns:
+  - name: tick_id
+    type: STRING
+    required: true
+    description: "<symbol>:<epoch>. Deriv's own tick.id is the subscription id, not unique per tick."
+  - name: subscription_id
+    type: STRING
+    required: true
+    description: Deriv subscription id (constant for a stream).
+  - name: symbol
+    type: STRING
+    required: true
+    description: Deriv symbol code, e.g. R_100.
+  - name: quote
+    type: FLOAT64
+    required: true
+    minimum: 0
+    description: Mid quote.
+  - name: bid
+    type: FLOAT64
+    required: false
+  - name: ask
+    type: FLOAT64
+    required: false
+  - name: pip_size
+    type: INT64
+    required: true
+    minimum: 0
+  - name: epoch
+    type: INT64
+    required: true
+    description: Tick time as Unix seconds, as sent by Deriv.
+  - name: quoted_at
+    type: TIMESTAMP
+    required: true
+    description: Tick time as a UTC timestamp.
+  - name: ingested_at
+    type: TIMESTAMP
+    required: true
+    description: Stamped by the loader when the row is written.

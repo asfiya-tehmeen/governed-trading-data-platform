@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: stg_ticks
+    columns:
+      - name: tick_id
+        data_tests: [unique, not_null]
+      - name: symbol
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('symbols'), field: symbol}
+      - name: quote
+        data_tests: [not_null]
+
+  - name: stg_trades
+    columns:
+      - name: trade_id
+        data_tests: [unique, not_null]
+      - name: client_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_clients'), field: client_id}
+      - name: symbol
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('symbols'), field: symbol}
+      - name: side
+        data_tests:
+          - accepted_values:
+              arguments: {values: [BUY, SELL]}
+      - name: signed_quantity
+        data_tests: [not_null]
+
+  - name: stg_clients
+    columns:
+      - name: client_id
+        data_tests: [unique, not_null]

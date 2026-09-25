@@ -1,0 +1,173 @@
+version: 2
+
+# Every mart has an enforced contract (see dbt_project.yml): if a model's output
+# columns or types change, the build fails instead of silently changing the report.
+
+models:
+  - name: dim_clients
+    description: Client dimension, PII masked.
+    columns:
+      - name: client_id
+        data_type: string
+        constraints: [{type: not_null}]
+        data_tests: [unique]
+      - name: display_name_masked
+        data_type: string
+      - name: email_sha256
+        data_type: string
+      - name: country
+        data_type: string
+      - name: account_currency
+        data_type: string
+      - name: risk_tier
+        data_type: string
+        data_tests:
+          - accepted_values:
+              arguments: {values: [LOW, MEDIUM, HIGH]}
+      - name: opened_at
+        data_type: timestamp
+      - name: updated_at
+        data_type: timestamp
+
+  - name: dim_symbols
+    columns:
+      - name: symbol
+        data_type: string
+        constraints: [{type: not_null}]
+        data_tests: [unique]
+      - name: display_name
+        data_type: string
+      - name: market
+        data_type: string
+      - name: submarket
+        data_type: string
+      - name: contract_size
+        data_type: numeric
+      - name: quote_currency
+        data_type: string
+
+  - name: fct_trades
+    description: One row per executed trade.
+    columns:
+      - name: trade_id
+        data_type: string
+        constraints: [{type: not_null}]
+        data_tests: [unique]
+      - name: client_id
+        data_type: string
+        constraints: [{type: not_null}]
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_clients'), field: client_id}
+      - name: symbol
+        data_type: string
+        constraints: [{type: not_null}]
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_symbols'), field: symbol}
+      - name: trade_date
+        data_type: date
+      - name: executed_at
+        data_type: timestamp
+      - name: side
+        data_type: string
+      - name: quantity
+        data_type: numeric
+      - name: signed_quantity
+        data_type: numeric
+      - name: price
+        data_type: numeric
+      - name: notional
+        data_type: numeric
+      - name: commission
+        data_type: numeric
+      - name: tick_id
+        data_type: string
+      - name: ingested_at
+        data_type: timestamp
+
+  - name: rpt_client_monthly_statement
+    description: Month-end client statement, one row per client, month and symbol.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [client_id, statement_month, symbol]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "opening_quantity + bought_quantity - sold_quantity = closing_quantity"
+      # A closed month must be valued; a missing price would silently zero the statement.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "month_end_price is not null"
+          config:
+            where: "is_month_closed"
+    columns:
+      - name: client_id
+        data_type: string
+      - name: statement_month
+        data_type: date
+      - name: is_month_closed
+        data_type: boolean
+      - name: symbol
+        data_type: string
+      - name: quote_currency
+        data_type: string
+      - name: opening_quantity
+        data_type: numeric
+      - name: trade_count
+        data_type: int64
+      - name: bought_quantity
+        data_type: numeric
+      - name: sold_quantity
+        data_type: numeric
+      - name: closing_quantity
+        data_type: numeric
+      - name: buy_notional
+        data_type: numeric
+      - name: sell_notional
+        data_type: numeric
+      - name: commission
+        data_type: numeric
+      - name: month_end_price
+        data_type: float64
+      - name: month_end_price_date
+        data_type: date
+      - name: closing_market_value
+        data_type: numeric
+      - name: generated_at
+        data_type: timestamp
+
+  - name: rpt_client_exposure
+    description: Current open exposure per client and symbol at the latest tick.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [client_id, symbol]
+    columns:
+      - name: client_id
+        data_type: string
+      - name: risk_tier
+        data_type: string
+      - name: symbol
+        data_type: string
+      - name: net_quantity
+        data_type: numeric
+      - name: direction
+        data_type: string
+      - name: last_trade_at
+        data_type: timestamp
+      - name: latest_price
+        data_type: float64
+        data_tests: [not_null]
+      - name: price_at
+        data_type: timestamp
+      - name: market_value
+        data_type: numeric
+      - name: gross_exposure
+        data_type: numeric
+      - name: share_of_client_exposure
+        data_type: numeric
+      - name: is_concentrated
+        data_type: boolean
+      - name: as_of
+        data_type: timestamp

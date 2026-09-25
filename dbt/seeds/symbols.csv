@@ -1,0 +1,6 @@
+symbol,display_name,market,submarket,contract_size,quote_currency
+R_10,Volatility 10 Index,synthetic_index,random_index,1,USD
+R_25,Volatility 25 Index,synthetic_index,random_index,1,USD
+R_50,Volatility 50 Index,synthetic_index,random_index,1,USD
+R_75,Volatility 75 Index,synthetic_index,random_index,1,USD
+R_100,Volatility 100 Index,synthetic_index,random_index,1,USD

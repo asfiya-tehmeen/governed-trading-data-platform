@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: pii_clients
+    description: >
+      Clear-text client PII. The only model that exposes names and emails.
+      The pii dataset is restricted to the compliance role.
+    columns:
+      - name: client_id
+        data_tests: [unique, not_null]
+      - name: full_name
+        config: {meta: {pii: true}}
+      - name: email
+        config: {meta: {pii: true}}

@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: int_daily_close_prices
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [symbol, price_date]
+
+  - name: int_client_symbol_months
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [client_id, symbol, statement_month]
+      # The roll-forward must reconcile: opening + bought - sold = closing.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "opening_quantity + bought_quantity - sold_quantity = closing_quantity"

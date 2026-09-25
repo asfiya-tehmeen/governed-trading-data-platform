@@ -1,0 +1,65 @@
+version: 2
+
+# Columns here must match contracts/raw_*.yml; tests/test_dbt_sources_match_contracts.py enforces it.
+sources:
+  - name: raw
+    database: "{{ env_var('GCP_PROJECT', 'placeholder-project') }}"
+    schema: "{{ env_var('BQ_RAW_DATASET', 'raw') }}"
+    config:
+      loaded_at_field: ingested_at
+    tables:
+      - name: ticks
+        description: Live Deriv ticks. Contract contracts/raw_ticks.yml.
+        config:
+          freshness:
+            warn_after: {count: 5, period: minute}
+            error_after: {count: 15, period: minute}
+        columns:
+          - name: tick_id
+          - name: subscription_id
+          - name: symbol
+          - name: quote
+          - name: bid
+          - name: ask
+          - name: pip_size
+          - name: epoch
+          - name: quoted_at
+          - name: ingested_at
+
+      - name: trades
+        description: Simulated client trades, at-least-once delivery. Contract contracts/raw_trades.yml.
+        config:
+          freshness:
+            warn_after: {count: 10, period: minute}
+            error_after: {count: 30, period: minute}
+        columns:
+          - name: trade_id
+          - name: client_id
+          - name: symbol
+          - name: side
+          - name: quantity
+          - name: price
+          - name: commission
+          - name: executed_at
+          - name: tick_id
+          - name: source
+          - name: ingested_at
+
+      - name: clients
+        description: Client snapshots. Contains PII. Contract contracts/raw_clients.yml.
+        config:
+          freshness:
+            warn_after: {count: 24, period: hour}
+            error_after: {count: 48, period: hour}
+        columns:
+          - name: client_id
+          - name: full_name
+            config: {meta: {pii: true}}
+          - name: email
+            config: {meta: {pii: true}}
+          - name: country
+          - name: account_currency
+          - name: risk_tier
+          - name: opened_at
+          - name: updated_at
+          - name: ingested_at
